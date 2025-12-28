@@ -155,6 +155,38 @@ impl CmpEq for u8x32 {
   }
 }
 
+impl CmpLt for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_lt(self, rhs: Self) -> Self::Output {
+    Self { a: self.a.simd_lt(rhs.a), b: self.b.simd_lt(rhs.b) }
+  }
+}
+
+impl CmpLe for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_le(self, rhs: Self) -> Self::Output {
+    Self { a: self.a.simd_le(rhs.a), b: self.b.simd_le(rhs.b) }
+  }
+}
+
+impl CmpGe for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_ge(self, rhs: Self) -> Self::Output {
+    Self { a: self.a.simd_ge(rhs.a), b: self.b.simd_ge(rhs.b) }
+  }
+}
+
+impl CmpGt for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn simd_gt(self, rhs: Self) -> Self::Output {
+    Self { a: self.a.simd_gt(rhs.a), b: self.b.simd_gt(rhs.b) }
+  }
+}
+
 impl Not for u8x32 {
   type Output = Self;
   #[inline]
