@@ -161,7 +161,7 @@ impl CmpLt for u8x32 {
   fn simd_lt(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_lt_mask_i8_m256i(self.avx,rhs.avx) }
+        Self { avx : cmp_gt_mask_i8_m256i(rhs.avx,self.avx) }
       } else {
         Self {
           a : self.a.simd_lt(rhs.a),
@@ -178,7 +178,9 @@ impl CmpLe for u8x32 {
   fn simd_le(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_le_mask_i8_m256i(self.avx,rhs.avx) }
+        // a <= b  is equivalent to  !(b < a)  or  !(a > b)
+        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx)};
+        Self { avx: gt_mask.bitxor(Self::splat(0xFF)).avx }
       } else {
         Self {
           a : self.a.simd_le(rhs.a),
@@ -195,7 +197,8 @@ impl CmpGe for u8x32 {
   fn simd_ge(self, rhs: Self) -> Self::Output {
     pick! {
       if #[cfg(target_feature="avx2")] {
-        Self { avx : cmp_ge_mask_i8_m256i(self.avx,rhs.avx) }
+        let gt_mask = Self { avx : cmp_gt_mask_i8_m256i(rhs.avx, self.avx)};
+        Self { avx: gt_mask.bitxor(Self::splat(0xFF)).avx }
       } else {
         Self {
           a : self.a.simd_ge(rhs.a),
