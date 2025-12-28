@@ -159,7 +159,16 @@ impl CmpLt for u8x32 {
   type Output = Self;
   #[inline]
   fn simd_lt(self, rhs: Self) -> Self::Output {
-    Self { a: self.a.simd_lt(rhs.a), b: self.b.simd_lt(rhs.b) }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_lt_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_lt(rhs.a),
+          b : self.b.simd_lt(rhs.b),
+        }
+      }
+    }
   }
 }
 
@@ -167,7 +176,16 @@ impl CmpLe for u8x32 {
   type Output = Self;
   #[inline]
   fn simd_le(self, rhs: Self) -> Self::Output {
-    Self { a: self.a.simd_le(rhs.a), b: self.b.simd_le(rhs.b) }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_le_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_le(rhs.a),
+          b : self.b.simd_le(rhs.b),
+        }
+      }
+    }
   }
 }
 
@@ -175,7 +193,16 @@ impl CmpGe for u8x32 {
   type Output = Self;
   #[inline]
   fn simd_ge(self, rhs: Self) -> Self::Output {
-    Self { a: self.a.simd_ge(rhs.a), b: self.b.simd_ge(rhs.b) }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_ge_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_ge(rhs.a),
+          b : self.b.simd_ge(rhs.b),
+        }
+      }
+    }
   }
 }
 
@@ -183,7 +210,16 @@ impl CmpGt for u8x32 {
   type Output = Self;
   #[inline]
   fn simd_gt(self, rhs: Self) -> Self::Output {
-    Self { a: self.a.simd_gt(rhs.a), b: self.b.simd_gt(rhs.b) }
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+        Self { avx : cmp_gt_mask_i8_m256i(self.avx,rhs.avx) }
+      } else {
+        Self {
+          a : self.a.simd_gt(rhs.a),
+          b : self.b.simd_gt(rhs.b),
+        }
+      }
+    }
   }
 }
 
