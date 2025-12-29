@@ -62,6 +62,61 @@ impl AlignTo for u8x16 {
   type Elem = u8;
 }
 
+impl Mul for u8x16 {
+  type Output = Self;
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="sse2")] {
+        // Widen to 16 bits.
+        let self_a_sse = shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(self.sse, self.sse));
+        let self_b_sse = shr_imm_u16_m128i::<8>( unpack_high_i8_m128i(self.sse, self.sse));
+
+        let rhs_a_sse = shr_imm_u16_m128i::<8>( unpack_low_i8_m128i(rhs.sse, rhs.sse));
+        let rhs_b_sse = shr_imm_u16_m128i::<8>( unpack_high_i8_m128i(rhs.sse, rhs.sse));
+
+        // Multiply wide vectors, keeping only the low 16 bits of each 32 bit result.
+        let a = i16x8 { sse: mul_i16_keep_low_m128i(self_a_sse, rhs_a_sse)};
+        let b = i16x8 {sse: mul_i16_keep_low_m128i(self_b_sse, rhs_b_sse) };
+
+        // Mask to keep only low byte of each u16.
+        let ff = i16x8::splat(0x00FF);
+        let a = a.bitand(ff);
+        let b = b.bitand(ff);
+
+        // Now pack back to u8x16.
+        Self::narrow_i16x8(a, b)
+      } else if #[cfg(target_feature="simd128")] {
+        let a_simd = i16x8_extmul_low_u8x16(self.simd, rhs.simd);
+        let b_simd = i16x8_extmul_high_u8x16(self.simd, rhs.simd);
+        Self { simd: u8x16_shuffle::<0, 2, 4, 6, 8, 10, 12, 14,
+                              16, 18, 20, 22, 24, 26, 28, 30>(a_simd, b_simd) }
+      } else if #[cfg(all(target_feature="neon",target_arch="aarch64"))]{
+        unsafe { Self { neon: vmulq_u8(self.neon, rhs.neon) } }
+      } else {
+        Self { arr: [
+          self.arr[0].wrapping_mul(rhs.arr[0]),
+          self.arr[1].wrapping_mul(rhs.arr[1]),
+          self.arr[2].wrapping_mul(rhs.arr[2]),
+          self.arr[3].wrapping_mul(rhs.arr[3]),
+          self.arr[4].wrapping_mul(rhs.arr[4]),
+          self.arr[5].wrapping_mul(rhs.arr[5]),
+          self.arr[6].wrapping_mul(rhs.arr[6]),
+          self.arr[7].wrapping_mul(rhs.arr[7]),
+          self.arr[8].wrapping_mul(rhs.arr[8]),
+          self.arr[9].wrapping_mul(rhs.arr[9]),
+          self.arr[10].wrapping_mul(rhs.arr[10]),
+          self.arr[11].wrapping_mul(rhs.arr[11]),
+          self.arr[12].wrapping_mul(rhs.arr[12]),
+          self.arr[13].wrapping_mul(rhs.arr[13]),
+          self.arr[14].wrapping_mul(rhs.arr[14]),
+          self.arr[15].wrapping_mul(rhs.arr[15]),
+        ]}
+      }
+    }
+  }
+}
+
 impl Add for u8x16 {
   type Output = Self;
   #[inline]

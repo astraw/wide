@@ -21,6 +21,41 @@ impl AlignTo for u8x32 {
   type Elem = u8;
 }
 
+impl Mul for u8x32 {
+  type Output = Self;
+  #[inline]
+  fn mul(self, rhs: Self) -> Self::Output {
+    pick! {
+      if #[cfg(target_feature="avx2")] {
+
+        // Widen each u8x16 to two u16x16 vectors.
+        let self_a_avx = unpack_low_i8_m256i(self.avx, Self::ZERO.avx);
+        let self_b_avx = unpack_high_i8_m256i(self.avx, Self::ZERO.avx);
+
+        let rhs_a_avx = unpack_low_i8_m256i(rhs.avx, Self::ZERO.avx);
+        let rhs_b_avx = unpack_high_i8_m256i(rhs.avx, Self::ZERO.avx);
+
+        // Perform multiplication of each u16x16 vector, keeping only the low 16 bits of each 32 bit result.
+        let a = i16x16{avx2:mul_i16_keep_low_m256i(self_a_avx, rhs_a_avx)};
+        let b = i16x16{avx2:mul_i16_keep_low_m256i(self_b_avx, rhs_b_avx)};
+
+        // Mask to keep only low byte of each u16.
+        let ff = i16x16::splat(0x00FF);
+        let a = a.bitand(ff);
+        let b = b.bitand(ff);
+
+        // Now pack back to u8x32.
+        Self { avx: pack_i16_to_u8_m256i(a.avx2, b.avx2) }
+      } else {
+        Self {
+          a : self.a.mul(rhs.a),
+          b : self.b.mul(rhs.b),
+        }
+      }
+    }
+  }
+}
+
 impl Add for u8x32 {
   type Output = Self;
   #[inline]

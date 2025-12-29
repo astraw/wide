@@ -9,6 +9,14 @@ fn size_align() {
 crate::generate_basic_traits_test!(u8x32, u8);
 
 #[test]
+fn impl_mul_for_u8x32() {
+  crate::test_random_vector_vs_scalar(
+    |a: u8x32, b| a * b,
+    |a, b| a.wrapping_mul(b),
+  );
+}
+
+#[test]
 fn impl_add_for_u8x32() {
   crate::test_random_vector_vs_scalar(
     |a: u8x32, b| a + b,
